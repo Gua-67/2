@@ -18,7 +18,6 @@
             padding: 20px;
             transition: background 0.3s;
         }
-        /* 主题变量 */
         body.theme-sakura { --bg-start: #f8b0b0; --bg-end: #f5a0a0; --panel-bg: rgba(255,240,245,0.96); --card-front: #fff0f5; --card-back: #f4c2c2; --matched-bg: #f0b0b0; --btn-bg: #e68484; --btn-shadow: #b55a5a; --stat-bg: #c07a7a; --message-bg: #fff0f0; --map-bg: #ffe4e9; --node-bg: #ffb7b7; }
         body.theme-ocean { --bg-start: #0b3b5f; --bg-end: #062235; --panel-bg: rgba(220,240,255,0.95); --card-front: #d4eaff; --card-back: #2c6e9e; --matched-bg: #6aa9cf; --btn-bg: #1f7a8c; --btn-shadow: #0e4a57; --stat-bg: #1f3a4b; --message-bg: #cfe3ff; --map-bg: #cdeeff; --node-bg: #5dade2; }
         body.theme-chocolate { --bg-start: #5e3a2a; --bg-end: #3e241a; --panel-bg: rgba(245,235,220,0.96); --card-front: #f7e8d4; --card-back: #a77b4d; --matched-bg: #bc9a6b; --btn-bg: #b97f44; --btn-shadow: #7a521f; --stat-bg: #634d2e; --message-bg: #f2e3c9; --map-bg: #e7d7be; --node-bg: #c28b40; }
@@ -175,14 +174,11 @@
             cursor: pointer;
             margin-top: 8px;
         }
-        /* 词库管理折叠面板 */
         .wordbank-panel {
             margin-top: 20px;
             background: var(--message-bg, #fff1cf);
             border-radius: 40px;
-            padding: 0;
             overflow: hidden;
-            transition: all 0.3s;
         }
         .wordbank-header {
             background: var(--btn-bg, #ff884d);
@@ -192,29 +188,35 @@
             color: white;
             display: flex;
             justify-content: space-between;
-            align-items: center;
         }
         .wordbank-content {
             max-height: 0;
             overflow: hidden;
-            transition: max-height 0.3s ease;
+            transition: max-height 0.3s;
             padding: 0 20px;
         }
         .wordbank-content.open {
             max-height: 500px;
             padding: 16px 20px;
         }
-        .add-form {
+        .add-form, .upload-area {
             display: flex;
             gap: 10px;
             flex-wrap: wrap;
             margin-bottom: 16px;
         }
-        .add-form input {
+        .add-form input, .upload-area input {
             flex: 1;
             padding: 8px 12px;
             border-radius: 30px;
             border: 1px solid #ccc;
+        }
+        .upload-label {
+            background: var(--btn-bg, #ff884d);
+            padding: 6px 14px;
+            border-radius: 30px;
+            color: white;
+            cursor: pointer;
         }
         .word-list {
             max-height: 200px;
@@ -226,30 +228,14 @@
         .word-item {
             display: flex;
             justify-content: space-between;
-            align-items: center;
             padding: 6px 12px;
             border-bottom: 1px solid #ddd;
-            font-size: 0.9rem;
         }
         .delete-word {
             background: #ff8866;
             border: none;
             border-radius: 20px;
             padding: 2px 10px;
-            color: white;
-            cursor: pointer;
-        }
-        .upload-area {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            margin-bottom: 16px;
-            flex-wrap: wrap;
-        }
-        .upload-label {
-            background: var(--btn-bg, #ff884d);
-            padding: 6px 14px;
-            border-radius: 30px;
             color: white;
             cursor: pointer;
         }
@@ -266,9 +252,7 @@
         <div class="home-container">
             <div class="header-bar">
                 <div class="title-area"><h1>🗺️ 单词冒险岛</h1></div>
-                <div class="stats">
-                    <div class="stat"><span>🪙 金币</span><span class="value" id="totalCoins">0</span></div>
-                </div>
+                <div class="stats"><div class="stat"><span>🪙 金币</span><span class="value" id="totalCoins">0</span></div></div>
                 <button id="homeSettingsBtn" class="icon-btn">⚙️</button>
             </div>
             <div class="map-container"><div id="mapView" class="map"></div></div>
@@ -296,9 +280,7 @@
                         <button class="icon-btn" id="addWordBtn" style="background:#3c8d2f;">手动添加</button>
                     </div>
                     <div class="word-list" id="wordListContainer"></div>
-                    <div style="margin-top: 10px;">
-                        <button id="resetDefaultBtn" class="icon-btn" style="background:#aa8866;">恢复默认词库</button>
-                    </div>
+                    <div style="margin-top:10px;"><button id="resetDefaultBtn" class="icon-btn" style="background:#aa8866;">恢复默认词库</button></div>
                 </div>
             </div>
         </div>
@@ -344,23 +326,9 @@
     <div id="settingsModal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); display:flex; align-items:center; justify-content:center; z-index:1000; visibility:hidden; opacity:0; transition:0.2s;">
         <div style="background: var(--panel-bg, #fff8e8); border-radius:48px; padding:24px; width:90%; max-width:400px;">
             <h3>游戏设置</h3>
-            <div style="margin:20px 0; display:flex; justify-content:space-between;">
-                <span>🎨 主题</span>
-                <select id="themeSelect">
-                    <option value="default">森林绿意</option>
-                    <option value="sakura">樱花粉</option>
-                    <option value="ocean">海洋蓝</option>
-                    <option value="chocolate">巧克力棕</option>
-                </select>
-            </div>
-            <div style="margin:20px 0; display:flex; justify-content:space-between;">
-                <span>🔊 音效</span>
-                <label><input type="checkbox" id="soundToggle" checked> 开启</label>
-            </div>
-            <div style="margin:20px 0; display:flex; justify-content:space-between;">
-                <span>🎵 背景音乐</span>
-                <label><input type="checkbox" id="musicToggle"> 开启</label>
-            </div>
+            <div style="margin:20px 0; display:flex; justify-content:space-between;"><span>🎨 主题</span><select id="themeSelect"><option value="default">森林绿意</option><option value="sakura">樱花粉</option><option value="ocean">海洋蓝</option><option value="chocolate">巧克力棕</option></select></div>
+            <div style="margin:20px 0; display:flex; justify-content:space-between;"><span>🔊 音效</span><label><input type="checkbox" id="soundToggle" checked> 开启</label></div>
+            <div style="margin:20px 0; display:flex; justify-content:space-between;"><span>🎵 背景音乐</span><label><input type="checkbox" id="musicToggle"> 开启</label></div>
             <button id="closeSettings" class="icon-btn" style="width:100%">关闭</button>
         </div>
     </div>
@@ -381,13 +349,13 @@
             { id: 3, name: "彩虹渐变", price: 5, owned: false, style: "background: linear-gradient(135deg, red, orange, yellow, green, blue, indigo, violet);" },
             { id: 4, name: "龙鳞纹", price: 7, owned: false, style: "background: #2F4F2F repeating-linear-gradient(45deg, #7CFC00 0px, #7CFC00 2px, #2F4F2F 2px, #2F4F2F 6px);" }
         ];
-       let heroSkins = [
+        // 主人公皮肤（包含动物/元素）
+        let heroSkins = [
             { id: 0, name: "冒险小子", price: 0, owned: true, emoji: "🧒" },
             { id: 1, name: "魔法少女", price: 1, owned: false, emoji: "🧙‍♀️" },
             { id: 2, name: "机甲战士", price: 3, owned: false, emoji: "🤖" },
             { id: 3, name: "精灵王子", price: 5, owned: false, emoji: "🧝" },
             { id: 4, name: "龙骑士", price: 6, owned: false, emoji: "🐉" },
-            // 新增动物/元素皮肤
             { id: 5, name: "小猫咪", price: 2, owned: false, emoji: "🐱" },
             { id: 6, name: "小狗狗", price: 2, owned: false, emoji: "🐶" },
             { id: 7, name: "小兔子", price: 2, owned: false, emoji: "🐰" },
@@ -396,7 +364,7 @@
             { id: 10, name: "小恐龙", price: 3, owned: false, emoji: "🦖" },
             { id: 11, name: "小企鹅", price: 2, owned: false, emoji: "🐧" },
             { id: 12, name: "独角兽", price: 4, owned: false, emoji: "🦄" }
-         ];
+        ];
         let currentCardSkin = 0;
         let currentHeroSkin = 0;
 
@@ -454,14 +422,12 @@
             saveProgress();
         }
 
-        // 主题切换
         function setTheme(theme) {
             document.body.className = '';
             if(theme !== 'default') document.body.classList.add('theme-'+theme);
             localStorage.setItem('wordTheme', theme);
         }
 
-        // 音效
         function playBeep(type) {
             if (!soundEnabled) return;
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
