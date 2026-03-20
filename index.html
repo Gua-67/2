@@ -18,7 +18,7 @@
             padding: 20px;
             transition: background 0.3s;
         }
-        /* 主题变量 - 默认森林绿 */
+        /* 主题变量 */
         body.theme-sakura { --bg-start: #f8b0b0; --bg-end: #f5a0a0; --panel-bg: rgba(255,240,245,0.96); --card-front: #fff0f5; --card-back: #f4c2c2; --matched-bg: #f0b0b0; --btn-bg: #e68484; --btn-shadow: #b55a5a; --stat-bg: #c07a7a; --message-bg: #fff0f0; --map-bg: #ffe4e9; --node-bg: #ffb7b7; }
         body.theme-ocean { --bg-start: #0b3b5f; --bg-end: #062235; --panel-bg: rgba(220,240,255,0.95); --card-front: #d4eaff; --card-back: #2c6e9e; --matched-bg: #6aa9cf; --btn-bg: #1f7a8c; --btn-shadow: #0e4a57; --stat-bg: #1f3a4b; --message-bg: #cfe3ff; --map-bg: #cdeeff; --node-bg: #5dade2; }
         body.theme-chocolate { --bg-start: #5e3a2a; --bg-end: #3e241a; --panel-bg: rgba(245,235,220,0.96); --card-front: #f7e8d4; --card-back: #a77b4d; --matched-bg: #bc9a6b; --btn-bg: #b97f44; --btn-shadow: #7a521f; --stat-bg: #634d2e; --message-bg: #f2e3c9; --map-bg: #e7d7be; --node-bg: #c28b40; }
@@ -175,6 +175,84 @@
             cursor: pointer;
             margin-top: 8px;
         }
+        /* 词库管理折叠面板 */
+        .wordbank-panel {
+            margin-top: 20px;
+            background: var(--message-bg, #fff1cf);
+            border-radius: 40px;
+            padding: 0;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+        .wordbank-header {
+            background: var(--btn-bg, #ff884d);
+            padding: 12px 20px;
+            cursor: pointer;
+            font-weight: bold;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .wordbank-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            padding: 0 20px;
+        }
+        .wordbank-content.open {
+            max-height: 500px;
+            padding: 16px 20px;
+        }
+        .add-form {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+        .add-form input {
+            flex: 1;
+            padding: 8px 12px;
+            border-radius: 30px;
+            border: 1px solid #ccc;
+        }
+        .word-list {
+            max-height: 200px;
+            overflow-y: auto;
+            background: rgba(255,255,200,0.3);
+            border-radius: 28px;
+            padding: 8px;
+        }
+        .word-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 12px;
+            border-bottom: 1px solid #ddd;
+            font-size: 0.9rem;
+        }
+        .delete-word {
+            background: #ff8866;
+            border: none;
+            border-radius: 20px;
+            padding: 2px 10px;
+            color: white;
+            cursor: pointer;
+        }
+        .upload-area {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        .upload-label {
+            background: var(--btn-bg, #ff884d);
+            padding: 6px 14px;
+            border-radius: 30px;
+            color: white;
+            cursor: pointer;
+        }
         @media (max-width: 600px) {
             .game-grid { gap: 8px; }
             .map-node { width: 60px; }
@@ -194,10 +272,34 @@
                 <button id="homeSettingsBtn" class="icon-btn">⚙️</button>
             </div>
             <div class="map-container"><div id="mapView" class="map"></div></div>
-            <div style="display: flex; gap: 15px; justify-content: center;">
+            <div style="display: flex; gap: 15px; justify-content: center; margin-bottom: 20px;">
                 <button id="startGameFromHome" class="icon-btn">▶️ 开始当前关卡</button>
                 <button id="openShopBtn" class="icon-btn">🛒 商店</button>
-                <button id="gotoWordBank" class="icon-btn">📚 词库管理</button>
+                <button id="toggleWordBankBtn" class="icon-btn">📚 词库管理</button>
+            </div>
+            <!-- 词库管理折叠面板 -->
+            <div class="wordbank-panel" id="wordbankPanel">
+                <div class="wordbank-header" id="wordbankHeader">
+                    <span>📖 单词库管理</span>
+                    <span>▼</span>
+                </div>
+                <div class="wordbank-content" id="wordbankContent">
+                    <div class="upload-area">
+                        <input type="file" id="excelUpload" accept=".xlsx,.xls,.csv" style="display:none;">
+                        <button class="upload-label" id="uploadExcelBtn">📂 上传Excel</button>
+                        <span id="fileNameDisplay" style="font-size:0.8rem;">未选择文件</span>
+                        <button class="icon-btn" id="importExcelBtn" style="background:#3c8d2f;">➕ 导入并添加</button>
+                    </div>
+                    <div class="add-form">
+                        <input type="text" id="wordInput" placeholder="英文/单词">
+                        <input type="text" id="meaningInput" placeholder="中文/释义">
+                        <button class="icon-btn" id="addWordBtn" style="background:#3c8d2f;">手动添加</button>
+                    </div>
+                    <div class="word-list" id="wordListContainer"></div>
+                    <div style="margin-top: 10px;">
+                        <button id="resetDefaultBtn" class="icon-btn" style="background:#aa8866;">恢复默认词库</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -271,7 +373,7 @@
         let levelStars = {};
         let totalCoins = 0;
 
-        // 卡片皮肤：使用纯色/简单图案 (CSS 类)
+        // 卡片皮肤 (纯CSS)
         let cardSkins = [
             { id: 0, name: "经典米色", price: 0, owned: true, style: "background: #F5E6D3;" },
             { id: 1, name: "木质纹", price: 1, owned: false, style: "background: repeating-linear-gradient(45deg, #CDA776, #CDA776 8px, #B5874A 8px, #B5874A 16px);" },
@@ -289,15 +391,7 @@
         let currentCardSkin = 0;
         let currentHeroSkin = 0;
 
-        // 游戏状态变量
-        let currentGamePairs = [];
-        let cards = [], selectedIndexes = [], lockBoard = false, timeoutId = null;
-        let stepCount = 0, matchedCount = 0, remainingPairs = 0, gameFinished = false;
-        let timerSeconds = 0, timerInterval = null, isTimerRunning = false;
-        let soundEnabled = true, musicEnabled = false;
-        let bgmAudio = null;
-        let audioCtx = null;
-
+        // 词库
         let userWordPairs = [
             { word: "Apple", translation: "苹果" }, { word: "Dog", translation: "狗" }, { word: "Cat", translation: "猫" },
             { word: "Sun", translation: "太阳" }, { word: "Moon", translation: "月亮" }, { word: "Star", translation: "星星" },
@@ -307,10 +401,19 @@
             { word: "Run", translation: "跑" }, { word: "Jump", translation: "跳" }, { word: "Fly", translation: "飞" }
         ];
 
-        // 辅助函数
+        // 游戏状态变量
+        let currentGamePairs = [];
+        let cards = [], selectedIndexes = [], lockBoard = false, timeoutId = null;
+        let stepCount = 0, matchedCount = 0, remainingPairs = 0, gameFinished = false;
+        let timerSeconds = 0, timerInterval = null, isTimerRunning = false;
+        let soundEnabled = true, musicEnabled = false;
+        let bgmAudio = null;
+        let audioCtx = null;
+
+        // ---------- 辅助函数 ----------
         function saveProgress() {
             localStorage.setItem('wordMatchAdvanced', JSON.stringify({
-                levelStars, totalCoins, cardSkins, heroSkins, currentCardSkin, currentHeroSkin
+                levelStars, totalCoins, cardSkins, heroSkins, currentCardSkin, currentHeroSkin, userWordPairs
             }));
         }
         function loadProgress() {
@@ -324,10 +427,12 @@
                     heroSkins = data.heroSkins || heroSkins;
                     currentCardSkin = data.currentCardSkin || 0;
                     currentHeroSkin = data.currentHeroSkin || 0;
+                    userWordPairs = data.userWordPairs || userWordPairs;
                 } catch(e) {}
             }
             if(Object.keys(levelStars).length===0) levelStars[1] = 0;
             updateUIValues();
+            renderWordList();
         }
         function updateUIValues() {
             document.getElementById('totalCoins').innerText = totalCoins;
@@ -506,7 +611,6 @@
             let star = stepCount <= baseSteps ? 3 : (stepCount <= baseSteps*1.8 ? 2 : 1);
             document.getElementById('starDisplay').innerText = star;
             if(!levelStars[currentLevel] || star > levelStars[currentLevel]) levelStars[currentLevel] = star;
-            // 三星奖励1金币，两星/一星无金币
             if(star === 3) {
                 addCoins(1);
                 document.getElementById('messageBox').innerHTML = `🏆 三星通关！获得 1 金币！${'⭐'.repeat(star)}`;
@@ -585,11 +689,113 @@
             });
         }
 
+        // 词库管理UI
+        function renderWordList() {
+            let container = document.getElementById('wordListContainer');
+            if(!container) return;
+            if(userWordPairs.length===0) {
+                container.innerHTML = '<div style="text-align:center; padding:12px;">暂无单词，请添加或导入Excel</div>';
+                return;
+            }
+            let html = '';
+            userWordPairs.forEach((pair, idx) => {
+                html += `<div class="word-item"><span>📖 ${escapeHtml(pair.word)} → ${escapeHtml(pair.translation)}</span><button class="delete-word" data-idx="${idx}">删除</button></div>`;
+            });
+            container.innerHTML = html;
+            document.querySelectorAll('.delete-word').forEach(btn => {
+                btn.onclick = (e) => {
+                    let idx = parseInt(btn.dataset.idx);
+                    userWordPairs.splice(idx,1);
+                    saveProgress();
+                    renderWordList();
+                };
+            });
+        }
+        function escapeHtml(str) { return String(str).replace(/[&<>]/g, function(m){ if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
+
+        // Excel 解析
+        let parsedExcelData = [];
+        function handleExcelUpload(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: "" });
+                if (!rows || rows.length === 0) { alert("Excel 无数据"); return; }
+                let startRow = 0;
+                if (rows.length>0 && rows[0].length>=2) {
+                    let firstRowCol1 = String(rows[0][0]).toLowerCase();
+                    let firstRowCol2 = String(rows[0][1]).toLowerCase();
+                    if (firstRowCol1.includes('word') || firstRowCol1.includes('英文') || firstRowCol1.includes('单词') ||
+                        firstRowCol2.includes('meaning') || firstRowCol2.includes('中文') || firstRowCol2.includes('释义')) {
+                        startRow = 1;
+                    }
+                }
+                let newPairs = [];
+                for(let i=startRow; i<rows.length; i++) {
+                    let row = rows[i];
+                    if(!row || row.length<2) continue;
+                    let word = row[0] ? String(row[0]).trim() : "";
+                    let translation = row[1] ? String(row[1]).trim() : "";
+                    if(word && translation) newPairs.push({ word, translation });
+                }
+                if(newPairs.length===0) alert("未解析出有效单词对");
+                else {
+                    parsedExcelData = newPairs;
+                    document.getElementById('fileNameDisplay').innerText = `已解析 ${newPairs.length} 对`;
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+        function importExcelToWordBank() {
+            if(!parsedExcelData || parsedExcelData.length===0) { alert("请先上传并解析Excel文件"); return; }
+            let added = 0;
+            for(let p of parsedExcelData) {
+                if(!userWordPairs.some(ex => ex.word===p.word && ex.translation===p.translation)) {
+                    userWordPairs.push(p);
+                    added++;
+                }
+            }
+            if(added>0) {
+                saveProgress();
+                renderWordList();
+                alert(`成功导入 ${added} 对新单词`);
+            } else alert("没有新增单词（可能已存在）");
+            parsedExcelData = [];
+            document.getElementById('fileNameDisplay').innerText = "未选择文件";
+            document.getElementById('excelUpload').value = "";
+        }
+        function addManualWord() {
+            let word = document.getElementById('wordInput').value.trim();
+            let meaning = document.getElementById('meaningInput').value.trim();
+            if(!word || !meaning) { alert("请填写完整"); return; }
+            if(userWordPairs.some(p=>p.word===word && p.translation===meaning)) { alert("该单词对已存在"); return; }
+            userWordPairs.push({ word, translation: meaning });
+            saveProgress();
+            renderWordList();
+            document.getElementById('wordInput').value = '';
+            document.getElementById('meaningInput').value = '';
+        }
+        function resetToDefault() {
+            userWordPairs = [
+                { word: "Apple", translation: "苹果" }, { word: "Dog", translation: "狗" }, { word: "Cat", translation: "猫" },
+                { word: "Sun", translation: "太阳" }, { word: "Moon", translation: "月亮" }, { word: "Star", translation: "星星" },
+                { word: "Happy", translation: "快乐" }, { word: "Big", translation: "大" }, { word: "Small", translation: "小" },
+                { word: "Fast", translation: "快" }, { word: "Slow", translation: "慢" }, { word: "Red", translation: "红" },
+                { word: "Blue", translation: "蓝" }, { word: "Green", translation: "绿" }, { word: "Yellow", translation: "黄" },
+                { word: "Run", translation: "跑" }, { word: "Jump", translation: "跳" }, { word: "Fly", translation: "飞" }
+            ];
+            saveProgress();
+            renderWordList();
+            alert("词库已恢复默认");
+        }
+
         function switchView(view) {
             document.getElementById('homeView').classList.toggle('active', view==='home');
             document.getElementById('gameView').classList.toggle('active', view==='game');
             document.getElementById('shopView').classList.toggle('active', view==='shop');
-            if(view==='home') { renderMap(); updateUIValues(); }
+            if(view==='home') { renderMap(); updateUIValues(); renderWordList(); }
             if(view==='shop') { renderShop(); updateUIValues(); }
         }
 
@@ -605,7 +811,26 @@
         document.getElementById('soundToggle').onchange = (e) => soundEnabled = e.target.checked;
         document.getElementById('musicToggle').onchange = (e) => { musicEnabled = e.target.checked; toggleMusic(musicEnabled); };
         document.getElementById('gameGrid').addEventListener('click', onCardClick);
-        document.getElementById('gotoWordBank').onclick = () => alert("词库管理：可通过控制台修改 userWordPairs，或重新部署时集成原Excel导入。");
+
+        // 词库管理折叠面板
+        const wbHeader = document.getElementById('wordbankHeader');
+        const wbContent = document.getElementById('wordbankContent');
+        wbHeader.onclick = () => {
+            wbContent.classList.toggle('open');
+            wbHeader.querySelector('span:last-child').innerText = wbContent.classList.contains('open') ? '▲' : '▼';
+        };
+        document.getElementById('toggleWordBankBtn').onclick = () => {
+            wbContent.classList.toggle('open');
+            wbHeader.querySelector('span:last-child').innerText = wbContent.classList.contains('open') ? '▲' : '▼';
+        };
+        document.getElementById('uploadExcelBtn').onclick = () => document.getElementById('excelUpload').click();
+        document.getElementById('excelUpload').onchange = (e) => {
+            if(e.target.files[0]) handleExcelUpload(e.target.files[0]);
+            else document.getElementById('fileNameDisplay').innerText = "未选择文件";
+        };
+        document.getElementById('importExcelBtn').onclick = importExcelToWordBank;
+        document.getElementById('addWordBtn').onclick = addManualWord;
+        document.getElementById('resetDefaultBtn').onclick = resetToDefault;
 
         // 初始化
         loadProgress();
@@ -613,6 +838,7 @@
         if(savedTheme) setTheme(savedTheme);
         renderMap();
         updateUIValues();
+        renderWordList();
     </script>
 </body>
 </html>
