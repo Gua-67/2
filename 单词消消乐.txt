@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>单词消消乐 | 点击读音 · Excel导入词库</title>
+    <!-- SheetJS 解析 Excel -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: linear-gradient(145deg, #1a472a 0%, #0e2a1a 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', 'Poppins', 'Roboto', 'Helvetica Neue', sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .game-container {
+            max-width: 950px;
+            width: 100%;
+            background: rgba(255, 248, 225, 0.95);
+            border-radius: 56px;
+            box-shadow: 0 25px 40px rgba(0, 0, 0, 0.4);
+            padding: 20px 24px 30px;
+            transition: all 0.2s ease;
+        }
+
+        .game-header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding: 0 4px;
+        }
+        .title-area {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        h1 {
+            font-size: 1.8rem;
+            margin: 0;
+            background: linear-gradient(135deg, #ffb347, #ff6b3d);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+        .sub {
+            font-size: 0.8rem;
+            background: #f7d44a;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-weight: bold;
+            color: #3c2a1f;
+        }
+        .stats {
+            display: flex;
+            gap: 16px;
+            background: #2e241f;
+            padding: 6px 18px;
+            border-radius: 60px;
+            color: #ffefcf;
+            font-weight: bold;
+        }
+        .stat {
+            display: flex;
+            align-items: baseline;
+            gap: 5px;
+        }
+        .stat .value {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: #ffcf4a;
+        }
+        .reset-btn {
+            background: #ff884d;
+            border: none;
+            font-size: 1.1rem;
+            padding: 6px 18px;
+            border-radius: 40px;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            transition: 0.1s linear;
+            box-shadow: 0 3px 0 #aa4f1c;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .reset-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 1px 0 #aa4f1c;
+        }
+
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+            margin: 20px 0 16px;
+        }
+
+        .card {
+            aspect-ratio: 1 / 1;
+            background: linear-gradient(145deg, #fff6e8, #ffe0b5);
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.3rem;
+            cursor: pointer;
+            transition: 0.1s ease;
+            box-shadow: 0 10px 15px -6px rgba(0, 0, 0, 0.3);
+            padding: 8px;
+            word-break: break-word;
+        }
+        .card:active {
+            transform: scale(0.96);
+        }
+        .card.back {
+            background: repeating-linear-gradient(45deg, #4b6b3e, #4b6b3e 12px, #3e5a32 12px, #3e5a32 24px);
+            color: #f9eec1;
+            font-size: 2.4rem;
+        }
+        .card.front {
+            background: linear-gradient(135deg, #fff3df, #ffe6c7);
+            color: #4a2e1e;
+            border: 2px solid #ffbb77;
+        }
+        .card.matched {
+            background: #9bc48b;
+            color: #2a572a;
+            text-decoration: line-through;
+            text-decoration-thickness: 2px;
+            cursor: default;
+            opacity: 0.75;
+            transform: scale(0.97);
+        }
+        .card.matched::after {
+            content: " ✓";
+            font-size: 1.3rem;
+            font-weight: bold;
+        }
+
+        .message-area {
+            text-align: center;
+            background: #fff1cf;
+            padding: 8px;
+            border-radius: 60px;
+            font-weight: bold;
+            color: #dd7230;
+            margin: 10px auto 0;
+            width: 90%;
+        }
+
+        .wordbank-panel {
+            background: #f6efdf;
+            border-radius: 40px;
+            margin-top: 24px;
+            padding: 16px 20px;
+            box-shadow: inset 0 1px 4px rgba(0,0,0,0.05), 0 6px 12px rgba(0,0,0,0.1);
+        }
+        .panel-title {
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: #5a3e2b;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+        }
+        .upload-area {
+            background: #e9e0ce;
+            border-radius: 32px;
+            padding: 12px 16px;
+            margin-bottom: 18px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px;
+        }
+        .upload-label {
+            background: #ffaa66;
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #3a2a1c;
+            transition: 0.1s;
+        }
+        .upload-label:active {
+            transform: scale(0.97);
+        }
+        .file-name {
+            font-size: 0.8rem;
+            color: #6b4c2c;
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .add-form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+        .add-form input {
+            flex: 1;
+            min-width: 110px;
+            padding: 10px 14px;
+            border-radius: 60px;
+            border: 1px solid #e0cbaa;
+            background: white;
+            font-size: 0.9rem;
+            outline: none;
+        }
+        .add-form input:focus {
+            border-color: #ff884d;
+        }
+        .btn {
+            background: #ffaa66;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 40px;
+            font-weight: bold;
+            color: #3a2a1c;
+            cursor: pointer;
+            transition: 0.1s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .btn:active {
+            transform: translateY(1px);
+        }
+        .btn-primary {
+            background: #3c8d2f;
+            color: white;
+        }
+        .word-list {
+            max-height: 200px;
+            overflow-y: auto;
+            background: #fffbf0;
+            border-radius: 28px;
+            padding: 8px 12px;
+            margin-bottom: 16px;
+        }
+        .word-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            border-bottom: 1px solid #eeddbb;
+            font-size: 0.9rem;
+        }
+        .word-item span:first-child {
+            font-weight: 600;
+            color: #2c5e2a;
+        }
+        .delete-word {
+            background: #ff8866;
+            border: none;
+            color: white;
+            border-radius: 30px;
+            padding: 4px 12px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .bank-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+        }
+        .badge {
+            background: #e6d5b8;
+            border-radius: 40px;
+            padding: 4px 12px;
+            font-size: 0.75rem;
+            color: #5e3e26;
+        }
+        footer {
+            font-size: 0.7rem;
+            text-align: center;
+            margin-top: 20px;
+            color: #836e4a;
+        }
+        @media (max-width: 600px) {
+            .game-grid { gap: 8px; }
+            .card.front { font-size: 1rem; }
+            .upload-area { flex-direction: column; align-items: stretch; }
+        }
+        .win-glow {
+            animation: winFlash 0.6s ease 2;
+        }
+        @keyframes winFlash {
+            0% { background: #ffefb9; }
+            100% { background: #ffd966; }
+        }
+        /* 读音小提示 */
+        .speech-hint {
+            font-size: 0.7rem;
+            text-align: center;
+            margin-top: 8px;
+            color: #b87c4a;
+        }
+    </style>
+</head>
+<body>
+<div class="game-container">
+    <div class="game-header">
+        <div class="title-area">
+            <h1>📚 单词消消乐</h1>
+            <div class="sub">🔊 点击单词听读音</div>
+        </div>
+        <div class="stats">
+            <div class="stat"><span>🎯 剩余</span><span class="value" id="remainingPairs">8</span></div>
+            <div class="stat"><span>👣 步数</span><span class="value" id="stepCount">0</span></div>
+            <div class="stat"><span>⏱️ 时间</span><span class="value" id="timerDisplay">0</span><span>s</span></div>
+        </div>
+        <button class="reset-btn" id="shuffleBtn">🃏 洗牌</button>
+    </div>
+
+    <div class="game-grid" id="gameGrid"></div>
+    <div class="message-area" id="messageBox">✨ 点击卡片，匹配单词 & 释义 ✨</div>
+    <div class="speech-hint">🔊 点击卡片上的文字即可朗读（英文/中文）</div>
+
+    <!-- 词库管理模块，增加Excel上传 -->
+    <div class="wordbank-panel">
+        <div class="panel-title">
+            📝 我的单词库
+            <span class="badge" id="wordCountBadge">0 对</span>
+        </div>
+
+        <!-- Excel 上传区域 -->
+        <div class="upload-area">
+            <input type="file" id="excelUpload" accept=".xlsx, .xls, .csv, .xlsm" style="display: none;" />
+            <button class="upload-label" id="uploadExcelBtn">📂 上传Excel表格</button>
+            <span class="file-name" id="fileNameDisplay">未选择文件</span>
+            <button class="btn" id="importExcelBtn" style="background: #5f9e4e; color:white;">➕ 导入并添加到词库</button>
+        </div>
+        <p style="font-size: 0.7rem; margin: -5px 0 10px 12px; color: #b87c4a;">📌 支持 .xlsx / .xls / .csv，第一列为英文/单词，第二列为中文/释义（首行自动跳过表头）</p>
+
+        <div class="add-form">
+            <input type="text" id="wordInput" placeholder="英文 / 单词" autocomplete="off">
+            <input type="text" id="meaningInput" placeholder="中文 / 释义" autocomplete="off">
+            <button class="btn" id="addWordBtn">➕ 手动添加</button>
+        </div>
+        <div class="word-list" id="wordListContainer"></div>
+        <div class="bank-actions">
+            <button class="btn" id="resetDefaultBtn">🔄 恢复默认词库</button>
+            <button class="btn btn-primary" id="startGameBtn">🎲 随机抽词开始游戏</button>
+        </div>
+    </div>
+    <footer>⚡ 配对成功即消除 | 点击卡片可朗读单词 | 支持Excel批量导入</footer>
+</div>
+
+<script>
+    // ---------- 游戏配置 ----------
+    const REQUIRED_PAIRS = 8;      // 固定8对卡片 (4x4网格)
+    // 默认词库
+    const DEFAULT_WORD_PAIRS = [
+        { word: "Apple", translation: "苹果" },
+        { word: "Dog", translation: "狗" },
+        { word: "Cat", translation: "猫" },
+        { word: "Sun", translation: "太阳" },
+        { word: "Moon", translation: "月亮" },
+        { word: "Star", translation: "星星" },
+        { word: "Happy", translation: "快乐" },
+        { word: "Big", translation: "大" }
+    ];
+
+    // ---------- 全局数据 ----------
+    let userWordPairs = [];            // 存储用户自定义词库 [{word, translation}]
+    let currentGamePairs = [];         // 当前游戏使用的词对 (长度 = REQUIRED_PAIRS)
+    
+    // 游戏状态
+    let cards = [];
+    let selectedIndexes = [];
+    let lockBoard = false;
+    let timeoutId = null;
+    let stepCount = 0;
+    let matchedCount = 0;
+    let remainingPairs = REQUIRED_PAIRS;
+    let timerSeconds = 0;
+    let timerInterval = null;
+    let isTimerRunning = false;
+    let gameFinished = false;
+
+    // DOM 元素
+    const gridContainer = document.getElementById('gameGrid');
+    const remainingSpan = document.getElementById('remainingPairs');
+    const stepSpan = document.getElementById('stepCount');
+    const timerDisplaySpan = document.getElementById('timerDisplay');
+    const shuffleBtn = document.getElementById('shuffleBtn');
+    const messageBox = document.getElementById('messageBox');
+    const wordInput = document.getElementById('wordInput');
+    const meaningInput = document.getElementById('meaningInput');
+    const addWordBtn = document.getElementById('addWordBtn');
+    const wordListContainer = document.getElementById('wordListContainer');
+    const resetDefaultBtn = document.getElementById('resetDefaultBtn');
+    const startGameBtn = document.getElementById('startGameBtn');
+    const wordCountBadge = document.getElementById('wordCountBadge');
+    // Excel 相关元素
+    const excelUploadInput = document.getElementById('excelUpload');
+    const uploadExcelBtn = document.getElementById('uploadExcelBtn');
+    const importExcelBtn = document.getElementById('importExcelBtn');
+    const fileNameDisplay = document.getElementById('fileNameDisplay');
+
+    let parsedExcelData = [];   // 临时存储解析后的词对 [{word, translation}]
+
+    // ---------- 语音朗读功能 (Web Speech API) ----------
+    function speakText(text) {
+        if (!text || text === "?" || text.trim() === "") return;
+        // 如果浏览器不支持语音合成，静默失败
+        if (!window.speechSynthesis) {
+            console.warn("当前浏览器不支持语音合成");
+            return;
+        }
+        // 根据文本内容选择语言：包含中文字符则用中文，否则用英文
+        const containsChinese = /[\u4e00-\u9fa5]/.test(text);
+        const lang = containsChinese ? "zh-CN" : "en-US";
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = lang;
+        utterance.rate = 0.9;   // 语速稍慢，清晰
+        utterance.pitch = 1.0;
+        // 取消任何正在进行的语音避免重叠（可选，为了体验不强制取消）
+        // window.speechSynthesis.cancel(); // 取消会导致正在读的停止，体验不好，不主动取消
+        window.speechSynthesis.speak(utterance);
+    }
+
+    // ---------- 词库持久化 ----------
+    function saveWordBankToLocal() {
+        localStorage.setItem('wordMatchPairs', JSON.stringify(userWordPairs));
+    }
+
+    function loadWordBankFromLocal() {
+        const stored = localStorage.getItem('wordMatchPairs');
+        if (stored) {
+            try {
+                const parsed = JSON.parse(stored);
+                if (Array.isArray(parsed) && parsed.length) {
+                    userWordPairs = parsed;
+                    return;
+                }
+            } catch(e) {}
+        }
+        userWordPairs = DEFAULT_WORD_PAIRS.map(p => ({ word: p.word, translation: p.translation }));
+        saveWordBankToLocal();
+    }
+
+    // 刷新词库UI列表
+    function renderWordList() {
+        if (!wordListContainer) return;
+        if (userWordPairs.length === 0) {
+            wordListContainer.innerHTML = '<div style="text-align:center; padding:12px; color:#aa8b64;">暂无单词，点击「恢复默认」或导入Excel添加单词~</div>';
+            wordCountBadge.innerText = `0 对`;
+            return;
+        }
+        let html = '';
+        userWordPairs.forEach((pair, idx) => {
+            html += `
+                <div class="word-item">
+                    <span>📖 ${escapeHtml(pair.word)}  &nbsp;→&nbsp;  ${escapeHtml(pair.translation)}</span>
+                    <button class="delete-word" data-index="${idx}">删除</button>
+                </div>
+            `;
+        });
+        wordListContainer.innerHTML = html;
+        wordCountBadge.innerText = `${userWordPairs.length} 对`;
+        // 绑定删除事件
+        document.querySelectorAll('.delete-word').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const idx = parseInt(btn.getAttribute('data-index'), 10);
+                if (!isNaN(idx) && idx >= 0 && idx < userWordPairs.length) {
+                    userWordPairs.splice(idx, 1);
+                    saveWordBankToLocal();
+                    renderWordList();
+                    messageBox.innerHTML = `📦 已删除词对，下次抽词生效。`;
+                    setTimeout(() => {
+                        if (!gameFinished && messageBox.innerHTML.includes("删除")) messageBox.innerHTML = "✨ 点击卡片，匹配单词 & 释义 ✨";
+                    }, 1500);
+                }
+            });
+        });
+    }
+
+    function escapeHtml(str) {
+        return String(str).replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    // 手动添加词对
+    function addWordPair() {
+        let word = wordInput.value.trim();
+        let meaning = meaningInput.value.trim();
+        if (!word || !meaning) {
+            messageBox.innerHTML = "⚠️ 请同时填写英文和中文！";
+            setTimeout(() => { if(messageBox && !gameFinished) messageBox.innerHTML = "✨ 点击卡片，匹配单词 & 释义 ✨"; }, 1000);
+            return;
+        }
+        userWordPairs.push({ word, translation: meaning });
+        saveWordBankToLocal();
+        renderWordList();
+        wordInput.value = '';
+        meaningInput.value = '';
+        messageBox.innerHTML = `✅ 已添加 "${word} ↔ ${meaning}"，点击「随机抽词」开始游戏！`;
+        setTimeout(() => {
+            if(messageBox && !gameFinished && messageBox.innerHTML.includes("已添加")) messageBox.innerHTML = "✨ 点击卡片，匹配单词 & 释义 ✨";
+        }, 1500);
+    }
+
+    // 恢复默认词库
+    function resetToDefault() {
+        userWordPairs = DEFAULT_WORD_PAIRS.map(p => ({ word: p.word, translation: p.translation }));
+        saveWordBankToLocal();
+        renderWordList();
+        messageBox.innerHTML = "🔄 词库已恢复默认 (苹果、狗、猫等8对)。点击「随机抽词」开始游戏~";
+        setTimeout(() => {
+            if(messageBox && !gameFinished) messageBox.innerHTML = "✨ 点击卡片，匹配单词 & 释义 ✨";
+        }, 1800);
+    }
+
+    // ---------- Excel 解析与导入 ----------
+    uploadExcelBtn.addEventListener('click', () => {
+        excelUploadInput.click();
+    });
+    excelUploadInput.addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        if (!file) {
+            fileNameDisplay.innerText = "未选择文件";
+            parsedExcelData = [];
+            return;
+        }
+        fileNameDisplay.innerText = file.name;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: "" });
+            if (!rows || rows.length === 0) {
+                messageBox.innerHTML = "❌ Excel 文件无数据！";
+                parsedExcelData = [];
+                return;
+            }
+            let startRow = 0;
+            if (rows.length > 0 && rows[0].length >= 2) {
+                const firstRowCol1 = String(rows[0][0]).toLowerCase();
+                const firstRowCol2 = String(rows[0][1]).toLowerCase();
+                if (firstRowCol1.includes('word') || firstRowCol1.includes('英文') || firstRowCol1.includes('单词') ||
+                    firstRowCol2.includes('meaning') || firstRowCol2.includes('中文') || firstRowCol2.includes('释义')) {
+                    startRow = 1;
+                }
+            }
+            const newPairs = [];
+            for (let i = startRow; i < rows.length; i++) {
+                const row = rows[i];
+                if (!row || row.length < 2) continue;
+                let word = row[0] ? String(row[0]).trim() : "";
+                let translation = row[1] ? String(row[1]).trim() : "";
+                if (word === "" || translation === "") continue;
+                newPairs.push({ word, translation });
+            }
+            if (newPairs.length === 0) {
+                messageBox.innerHTML = "⚠️ 未从Excel中解析出有效的单词对，请确保第一列单词，第二列释义。";
+                parsedExcelData = [];
+            } else {
+                parsedExcelData = newPairs;
+                messageBox.innerHTML = `📎 解析成功！共 ${parsedExcelData.length} 对单词，点击「导入并添加到词库」完成导入。`;
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    });
+
+    function importExcelToWordBank() {
+        if (!parsedExcelData || parsedExcelData.length === 0) {
+            messageBox.innerHTML = "❌ 请先选择并解析Excel文件！";
+            return;
+        }
+        let addedCount = 0;
+        for (const newPair of parsedExcelData) {
+            const exists = userWordPairs.some(p => p.word === newPair.word && p.translation === newPair.translation);
+            if (!exists) {
+                userWordPairs.push({ word: newPair.word, translation: newPair.translation });
+                addedCount++;
+            }
+        }
+        if (addedCount > 0) {
+            saveWordBankToLocal();
+            renderWordList();
+            messageBox.innerHTML = `✅ 成功导入 ${addedCount} 对新单词！当前词库共 ${userWordPairs.length} 对。`;
+            parsedExcelData = [];
+            excelUploadInput.value = '';
+            fileNameDisplay.innerText = "未选择文件";
+        } else {
+            messageBox.innerHTML = `ℹ️ 没有新增单词（所有词对都已存在于词库中）。`;
+        }
+        setTimeout(() => {
+            if (messageBox && !gameFinished && messageBox.innerHTML.includes("导入")) messageBox.innerHTML = "✨ 点击卡片，匹配单词 & 释义 ✨";
+        }, 2000);
+    }
+
+    importExcelBtn.addEventListener('click', importExcelToWordBank);
+
+    // ---------- 游戏核心 ----------
+    function selectRandomPairsForGame() {
+        if (userWordPairs.length < REQUIRED_PAIRS) {
+            messageBox.innerHTML = `⚠️ 当前词库只有 ${userWordPairs.length} 对单词，至少需要 ${REQUIRED_PAIRS} 对才能开始游戏！请导入更多单词或恢复默认词库。`;
+            return null;
+        }
+        const shuffledAll = [...userWordPairs];
+        for (let i = shuffledAll.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffledAll[i], shuffledAll[j]] = [shuffledAll[j], shuffledAll[i]];
+        }
+        const selected = shuffledAll.slice(0, REQUIRED_PAIRS);
+        return selected.map(p => ({ word: p.word, translation: p.translation }));
+    }
+
+    function buildCardsFromPairs(pairs) {
+        const newCards = [];
+        let uid = 0;
+        for (let i = 0; i < pairs.length; i++) {
+            const pair = pairs[i];
+            newCards.push({ id: uid++, pairId: i, text: pair.word, matched: false, isOpen: false });
+            newCards.push({ id: uid++, pairId: i, text: pair.translation, matched: false, isOpen: false });
+        }
+        for (let i = newCards.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [newCards[i], newCards[j]] = [newCards[j], newCards[i]];
+        }
+        return newCards;
+    }
+
+    function resetGameByCurrentPairs() {
+        if (!currentGamePairs.length) {
+            const fallback = selectRandomPairsForGame();
+            if (!fallback) return false;
+            currentGamePairs = fallback;
+        }
+        if (timeoutId) clearTimeout(timeoutId);
+        lockBoard = false;
+        selectedIndexes = [];
+        gameFinished = false;
+        stepCount = 0;
+        matchedCount = 0;
+        remainingPairs = REQUIRED_PAIRS;
+        updateStatsUI();
+        stopTimer();
+        timerSeconds = 0;
+        isTimerRunning = false;
+        timerDisplaySpan.innerText = "0";
+        cards = buildCardsFromPairs(currentGamePairs);
+        renderGrid();
+        messageBox.innerHTML = "🎲 新对局！配对单词与释义吧！";
+        setTimeout(() => {
+            if (messageBox && !gameFinished) messageBox.innerHTML = "✨ 点击卡片，匹配单词 & 释义 ✨";
+        }, 1200);
+        return true;
+    }
+
+    function startNewGameWithRandomPairs() {
+        const newPairs = selectRandomPairsForGame();
+        if (!newPairs) return false;
+        currentGamePairs = newPairs;
+        return resetGameByCurrentPairs();
+    }
+
+    function updateStatsUI() {
+        remainingSpan.innerText = remainingPairs;
+        stepSpan.innerText = stepCount;
+        timerDisplaySpan.innerText = timerSeconds;
+    }
+
+    function stopTimer() {
+        if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+        isTimerRunning = false;
+    }
+
+    function startTimer() {
+        if (timerInterval) stopTimer();
+        isTimerRunning = true;
+        timerInterval = setInterval(() => {
+            if (isTimerRunning && !gameFinished) {
+                timerSeconds++;
+                timerDisplaySpan.innerText = timerSeconds;
+            }
+        }, 1000);
+    }
+
+    function checkVictory() {
+        if (matchedCount === REQUIRED_PAIRS) {
+            gameFinished = true;
+            stopTimer();
+            messageBox.innerHTML = "🏆 恭喜！全配对成功！点击「随机抽词」继续挑战新单词 🏆";
+            messageBox.classList.add('win-glow');
+            setTimeout(() => messageBox.classList.remove('win-glow'), 1000);
+            lockBoard = true;
+            return true;
+        }
+        return false;
+    }
+
+    function handleMatch(idxA, idxB) {
+        const cardA = cards[idxA], cardB = cards[idxB];
+        if (cardA.matched || cardB.matched) return false;
+        cardA.matched = true; cardB.matched = true;
+        cardA.isOpen = false; cardB.isOpen = false;
+        matchedCount++;
+        remainingPairs = REQUIRED_PAIRS - matchedCount;
+        updateStatsUI();
+        selectedIndexes = [];
+        renderGrid();
+        const isWin = checkVictory();
+        if (!isWin) {
+            messageBox.innerHTML = "✔️ 配对成功！继续～";
+            setTimeout(() => {
+                if (messageBox && !gameFinished && matchedCount !== REQUIRED_PAIRS) messageBox.innerHTML = "✨ 点击卡片，匹配单词 & 释义 ✨";
+            }, 700);
+        }
+        return true;
+    }
+
+    function handleMismatch(idxA, idxB) {
+        if (timeoutId) clearTimeout(timeoutId);
+        lockBoard = true;
+        timeoutId = setTimeout(() => {
+            const cardA = cards[idxA], cardB = cards[idxB];
+            if (cardA && !cardA.matched) cardA.isOpen = false;
+            if (cardB && !cardB.matched) cardB.isOpen = false;
+            selectedIndexes = [];
+            renderGrid();
+            lockBoard = false;
+            timeoutId = null;
+            if (!gameFinished && matchedCount !== REQUIRED_PAIRS) {
+                messageBox.innerHTML = "🔄 不对应，再试试看～";
+                setTimeout(() => {
+                    if (messageBox && !gameFinished && matchedCount !== REQUIRED_PAIRS) messageBox.innerHTML = "✨ 点击卡片，匹配单词 & 释义 ✨";
+                }, 800);
+            }
+        }, 700);
+    }
+
+    // 核心点击事件，增加读音功能
+    function onCardClick(event) {
+        let target = event.target.closest('.card');
+        if (!target) return;
+        const idx = parseInt(target.getAttribute('data-index'), 10);
+        if (isNaN(idx)) return;
+        const card = cards[idx];
+        if (!card) return;
+
+        // ---------- 读音功能：如果卡片是正面（翻开）或已配对，朗读文本 ----------
+        // 注意：背面显示 "?" 不朗读，且锁板时暂不朗读（避免动画期间语音干扰）
+        if (!lockBoard && (card.matched || card.isOpen)) {
+            // 确保文本不为空且不是占位符
+            if (card.text && card.text !== "?") {
+                speakText(card.text);
+            }
+        }
+
+        // 以下为原有游戏逻辑，部分情况会直接return，但读音已经执行
+        if (gameFinished) { 
+            messageBox.innerHTML = "🏆 游戏已胜利，请点击「随机抽词」开始新对局 🏆";
+            return; 
+        }
+        if (lockBoard) return;
+        if (card.matched) return;
+        if (card.isOpen) return;
+
+        if (!isTimerRunning && !gameFinished && matchedCount < REQUIRED_PAIRS) startTimer();
+
+        if (selectedIndexes.length >= 2) return;
+        card.isOpen = true;
+        renderGrid();
+        selectedIndexes.push(idx);
+        if (selectedIndexes.length === 2) {
+            stepCount++;
+            updateStatsUI();
+            const [i1, i2] = selectedIndexes;
+            if (cards[i1].pairId === cards[i2].pairId) handleMatch(i1, i2);
+            else handleMismatch(i1, i2);
+        }
+    }
+
+    function renderGrid() {
+        if (!gridContainer) return;
+        gridContainer.innerHTML = '';
+        for (let i = 0; i < cards.length; i++) {
+            const c = cards[i];
+            const div = document.createElement('div');
+            div.classList.add('card');
+            div.setAttribute('data-index', i);
+            if (c.matched) {
+                div.classList.add('matched');
+                div.innerText = c.text;
+                div.style.cursor = 'pointer';  // 已配对依然可点击听读音
+            } else if (c.isOpen) {
+                div.classList.add('front');
+                div.innerText = c.text;
+            } else {
+                div.classList.add('back');
+                div.innerText = '?';
+            }
+            gridContainer.appendChild(div);
+        }
+    }
+
+    function reshuffleGame() {
+        if (gameFinished) {
+            if (currentGamePairs.length) resetGameByCurrentPairs();
+            else startNewGameWithRandomPairs();
+            return;
+        }
+        if (timeoutId) clearTimeout(timeoutId);
+        lockBoard = false;
+        selectedIndexes = [];
+        if (currentGamePairs.length) {
+            stopTimer();
+            timerSeconds = 0; isTimerRunning = false;
+            timerDisplaySpan.innerText = "0";
+            stepCount = 0; matchedCount = 0; remainingPairs = REQUIRED_PAIRS;
+            gameFinished = false;
+            updateStatsUI();
+            cards = buildCardsFromPairs(currentGamePairs);
+            renderGrid();
+            messageBox.innerHTML = "🃏 重新洗牌，继续挑战！";
+            setTimeout(() => {
+                if (messageBox && !gameFinished) messageBox.innerHTML = "✨ 点击卡片，匹配单词 & 释义 ✨";
+            }, 1000);
+        } else {
+            startNewGameWithRandomPairs();
+        }
+    }
+
+    // 事件绑定
+    function bindEvents() {
+        gridContainer.addEventListener('click', onCardClick);
+        shuffleBtn.addEventListener('click', reshuffleGame);
+        addWordBtn.addEventListener('click', addWordPair);
+        resetDefaultBtn.addEventListener('click', resetToDefault);
+        startGameBtn.addEventListener('click', () => {
+            const success = startNewGameWithRandomPairs();
+            if (!success && userWordPairs.length < REQUIRED_PAIRS) {
+                messageBox.innerHTML = `⚠️ 词库不足 ${REQUIRED_PAIRS} 对，请导入Excel或添加单词。`;
+            }
+        });
+        wordInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') addWordPair(); });
+        meaningInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') addWordPair(); });
+    }
+
+    function init() {
+        loadWordBankFromLocal();
+        renderWordList();
+        const initPairs = selectRandomPairsForGame();
+        if (initPairs) currentGamePairs = initPairs;
+        else if (userWordPairs.length >= REQUIRED_PAIRS) currentGamePairs = selectRandomPairsForGame();
+        if (!currentGamePairs || currentGamePairs.length === 0) {
+            userWordPairs = DEFAULT_WORD_PAIRS.map(p => ({ word: p.word, translation: p.translation }));
+            saveWordBankToLocal();
+            renderWordList();
+            currentGamePairs = selectRandomPairsForGame();
+        }
+        resetGameByCurrentPairs();
+        bindEvents();
+    }
+
+    init();
+</script>
+</body>
+</html>
